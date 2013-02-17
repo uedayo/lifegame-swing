@@ -2,6 +2,7 @@
 package com.uedayo.swing.lifegame;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Container;
 import java.awt.GridLayout;
 import java.awt.TextArea;
@@ -176,6 +177,7 @@ public class LifeGameMain implements ActionListener {
 
         if (e.getSource() == randomButton) {
             label.setText("状態をランダムに設定!!");
+            refresh();
         }
 
         if (e.getSource() == resetButton) {
@@ -219,5 +221,27 @@ public class LifeGameMain implements ActionListener {
         if (e.getSource() == lifeMapBtns[row][column]) {
             label.setText("[" + row + ", " + column + "]の生死が反転!!");
         }
+    }
+
+    /**
+     * 全ボタンの状態を更新
+     */
+    private void refresh() {
+        for (JButton[] btns : lifeMapBtns) {
+            for (JButton btn : btns) {
+                boolean live = true;
+                updateLife(btn, live);
+            }
+        }
+    }
+
+    /**
+     * あるボタンの状態を更新
+     * 
+     * @param live
+     */
+    private void updateLife(JButton lifeButton, boolean live) {
+        String liveStatus = live ? "生" : "死";
+        lifeButton.setText(liveStatus);
     }
 }
