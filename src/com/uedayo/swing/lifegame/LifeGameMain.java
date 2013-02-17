@@ -2,10 +2,13 @@
 package com.uedayo.swing.lifegame;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Container;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -15,13 +18,19 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 
+import com.sun.net.ssl.internal.www.protocol.https.Handler;
+import com.uedayo.lib.lifegame.LifeMap;
+import com.uedayo.lib.lifegame.LifeMap.RefreshListener;
+
 /**
  * メイン処理
  */
-public class LifeGameMain implements ActionListener {
+public class LifeGameMain implements ActionListener, RefreshListener {
     // 定数
-    final int ROW_NUM = 6;
-    final int COLUMN_NUM = 6;
+    final int ROW_NUM = 10;
+    final int COLUMN_NUM = 10;
+    final String LIFE = "生";
+    final String DEATH = "死";
 
     // レイアウト
     Container contentPanel;
@@ -34,7 +43,8 @@ public class LifeGameMain implements ActionListener {
     // ラベル
     JLabel label;
 
-    // ライフマップパネル
+    // ライフマップ
+    LifeMap lifeMap;
     JPanel lifeMapPanel;
     JButton[][] lifeMapBtns;
 
@@ -47,6 +57,13 @@ public class LifeGameMain implements ActionListener {
     JButton randomButton;
     JButton resetButton;
 
+    // タイマー
+    Timer timer;
+    TimerTask task;
+    Handler handler;
+
+    boolean isStarted;
+
     public static void main(String[] args) {
         new LifeGameMain();
     }
@@ -55,11 +72,12 @@ public class LifeGameMain implements ActionListener {
      * メイン処理
      */
     public LifeGameMain() {
+        handler = new Handler();
+
         initializeMainFrame();
         initializeLabel();
         initializeLifeMap(ROW_NUM, COLUMN_NUM);
         initializeButton();
-
         showMainFrame();
     }
 
@@ -87,6 +105,8 @@ public class LifeGameMain implements ActionListener {
      * ライフマップの初期化
      */
     private void initializeLifeMap(int rowNum, int colNum) {
+        lifeMap = new LifeMap(rowNum, colNum);
+        lifeMap.init((RefreshListener) LifeGameMain.this);
         lifeMapPanel = new JPanel();
         lifeMapPanel.setLayout(new GridLayout(rowNum, colNum));
         initializeLifeMapRows(rowNum, colNum);
@@ -115,8 +135,9 @@ public class LifeGameMain implements ActionListener {
     private void initializeLifeMapRow(int currentRow, int maxColumn) {
         for (int cal = 0; cal < maxColumn; cal++) {
             lifeMapBtns[currentRow][cal] = new JButton();
-            String text = "[" + currentRow + ", " + cal + "]";
+            String text = DEATH;
             lifeMapBtns[currentRow][cal].setText(text);
+            lifeMapBtns[currentRow][cal].setForeground(Color.RED);
             lifeMapBtns[currentRow][cal].addActionListener(this);
             lifeMapPanel.add(lifeMapBtns[currentRow][cal]);
         }
@@ -162,22 +183,47 @@ public class LifeGameMain implements ActionListener {
 
         if (e.getSource() == startStopButton) {
             label.setText("開始!!");
+            // タイマー処理
+            startLifecycle();
         }
 
         if (e.getSource() == stepButton) {
             label.setText("ステップ実行!!");
+            // 次の状態に遷移
+            lifeMap.setNextLivingState();
+            // アップデート
+            lifeMap.updateLivingStatus();
         }
 
         if (e.getSource() == randomButton) {
             label.setText("状態をランダムに設定!!");
-            refresh();
+            lifeMap.random();
         }
 
         if (e.getSource() == resetButton) {
             label.setText("状態をリセット!!");
+            lifeMap.reset();
         }
 
         checkLifeMapAction(e);
+    }
+
+    /**
+     * ライフサイクルの開始
+     */
+    private void startLifecycle() {
+        timer = new Timer();
+        task = new TimerTask() {
+
+            @Override
+            public void run() {
+                // Swing でのタイマー処理を学習
+
+            }
+        };
+        long delay = 200;
+        long period = 200;
+        timer.schedule(task, delay, period);
     }
 
     /**
@@ -204,7 +250,7 @@ public class LifeGameMain implements ActionListener {
     }
 
     /**
-     * 各要素について調べる
+     * 各Lifeボタンが押されていれば生死を反転
      * 
      * @param e
      * @param row
@@ -212,29 +258,43 @@ public class LifeGameMain implements ActionListener {
      */
     private void checkLifeActionPerfomed(ActionEvent e, int row, int column) {
         if (e.getSource() == lifeMapBtns[row][column]) {
-            label.setText("[" + row + ", " + column + "]の生死が反転!!");
+            label.setText("[" + row + ", " + column + "]の" + LIFE + DEATH + "が反転!!");
+            lifeMap.reverseLivingState(row, column);
         }
     }
 
     /**
-     * 全ボタンの状態を更新
+     * 生死の表示を更新(全体)
      */
-    private void refresh() {
-        for (JButton[] btns : lifeMapBtns) {
-            for (JButton btn : btns) {
-                boolean live = true;
-                updateLife(btn, live);
-            }
+    @Override
+    public void refreshLifes() {
+        for (int row = 0; row < ROW_NUM; row++) {
+            refreshLifeRow(row);
         }
     }
 
     /**
-     * あるボタンの状態を更新
+     * 生死の表示を更新(行)
+     * 
+     * @param row
+     */
+    private void refreshLifeRow(int row) {
+        for (int column = 0; column < COLUMN_NUM; column++) {
+            JButton lifeButton = lifeMapBtns[row][column];
+            boolean live = lifeMap.isLiving(row, column);
+            refreshLife(lifeButton, live);
+        }
+    }
+
+    /**
+     * 生死の表示を更新(ボタン)
      * 
      * @param live
      */
-    private void updateLife(JButton lifeButton, boolean live) {
-        String liveStatus = live ? "生" : "死";
-        lifeButton.setText(liveStatus);
+    private void refreshLife(JButton lifeButton, boolean live) {
+        String string = live ? LIFE : DEATH;
+        Color color = live ? Color.BLUE : Color.RED;
+        lifeButton.setText(string);
+        lifeButton.setForeground(color);
     }
 }
