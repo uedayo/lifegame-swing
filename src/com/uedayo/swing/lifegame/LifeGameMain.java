@@ -42,6 +42,7 @@ public class LifeGameMain implements ActionListener {
 
     // ライフマップパネル
     JPanel lifeMapPanel;
+    JButton[][] lifeMapBtns;
 
     // ボタンパネル
     JPanel buttonPanel;
@@ -83,7 +84,7 @@ public class LifeGameMain implements ActionListener {
      * ラベルの初期化
      */
     private void initializeLabel() {
-        label = new JLabel("ボタンを押してね。");
+        label = new JLabel("ボタンを押して!!");
         label.setHorizontalAlignment(SwingConstants.CENTER);
         contentPanel.add(label, BorderLayout.NORTH);
     }
@@ -104,6 +105,7 @@ public class LifeGameMain implements ActionListener {
      * @param maxColumn
      */
     private void initializeLifeMapRows(int maxRow, int maxColumn) {
+        lifeMapBtns = new JButton[maxRow][maxColumn];
         for (int row = 0; row < maxRow; row++) {
             initializeLifeMapRow(row, maxColumn);
             contentPanel.add(lifeMapPanel, BorderLayout.CENTER);
@@ -117,12 +119,12 @@ public class LifeGameMain implements ActionListener {
      * @param maxColumn
      */
     private void initializeLifeMapRow(int currentRow, int maxColumn) {
-        JButton[] lifeMapBtns = new JButton[maxColumn];
         for (int cal = 0; cal < maxColumn; cal++) {
-            lifeMapBtns[cal] = new JButton();
+            lifeMapBtns[currentRow][cal] = new JButton();
             String text = "[" + currentRow + ", " + cal + "]";
-            lifeMapBtns[cal].setText(text);
-            lifeMapPanel.add(lifeMapBtns[cal]);
+            lifeMapBtns[currentRow][cal].setText(text);
+            lifeMapBtns[currentRow][cal].addActionListener(this);
+            lifeMapPanel.add(lifeMapBtns[currentRow][cal]);
         }
     }
 
@@ -162,21 +164,60 @@ public class LifeGameMain implements ActionListener {
      */
     @Override
     public void actionPerformed(ActionEvent e) {
+        System.out.println(e.getSource());
 
         if (e.getSource() == startStopButton) {
-            label.setText("開始しました。");
+            label.setText("開始!!");
         }
 
         if (e.getSource() == stepButton) {
-            label.setText("ステップ実行しました。");
+            label.setText("ステップ実行!!");
         }
 
         if (e.getSource() == randomButton) {
-            label.setText("状態をランダムに設定しました。");
+            label.setText("状態をランダムに設定!!");
         }
 
         if (e.getSource() == resetButton) {
-            label.setText("状態をリセットしました。");
+            label.setText("状態をリセット!!");
+        }
+
+        checkLifeMapAction(e);
+    }
+
+    /**
+     * LifeMapのボタンが押された場合の処理
+     * 
+     * @param e
+     */
+    private void checkLifeMapAction(ActionEvent e) {
+        for (int row = 0; row < ROW_NUM; row++) {
+            checkLifeMapRowAction(e, row);
+        }
+    }
+
+    /**
+     * ある行について調べる
+     * 
+     * @param e
+     * @param row
+     */
+    private void checkLifeMapRowAction(ActionEvent e, int row) {
+        for (int column = 0; column < COLUMN_NUM; column++) {
+            checkLifeActionPerfomed(e, row, column);
+        }
+    }
+
+    /**
+     * 各要素について調べる
+     * 
+     * @param e
+     * @param row
+     * @param column
+     */
+    private void checkLifeActionPerfomed(ActionEvent e, int row, int column) {
+        if (e.getSource() == lifeMapBtns[row][column]) {
+            label.setText("[" + row + ", " + column + "]の生死が反転!!");
         }
     }
 }
