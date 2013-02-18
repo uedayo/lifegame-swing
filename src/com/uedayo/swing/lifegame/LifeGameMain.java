@@ -27,8 +27,8 @@ import com.uedayo.lib.lifegame.LifeMap.RefreshListener;
  */
 public class LifeGameMain implements ActionListener, RefreshListener {
     // 定数
-    final int ROW_NUM = 10;
-    final int COLUMN_NUM = 10;
+    final int ROW_NUM = 26;
+    final int COLUMN_NUM = 15;
     final String LIFE = "生";
     final String DEATH = "死";
 
@@ -197,11 +197,13 @@ public class LifeGameMain implements ActionListener, RefreshListener {
 
         if (e.getSource() == randomButton) {
             label.setText("状態をランダムに設定!!");
+            stopLifecycle();
             lifeMap.random();
         }
 
         if (e.getSource() == resetButton) {
             label.setText("状態をリセット!!");
+            stopLifecycle();
             lifeMap.reset();
         }
 
@@ -217,8 +219,10 @@ public class LifeGameMain implements ActionListener, RefreshListener {
 
             @Override
             public void run() {
-                // Swing でのタイマー処理を学習
-
+                // 次の状態に遷移
+                lifeMap.setNextLivingState();
+                // アップデート
+                lifeMap.updateLivingStatus();
             }
         };
         long delay = 200;
@@ -226,6 +230,16 @@ public class LifeGameMain implements ActionListener, RefreshListener {
         timer.schedule(task, delay, period);
     }
 
+    /**
+     * ライフサイクルの中断
+     */
+    private void stopLifecycle() {
+        if (timer != null) {
+            timer.cancel();
+            timer = null;
+        }
+    }
+    
     /**
      * LifeMapのボタンが押された場合の処理
      * 
@@ -297,4 +311,6 @@ public class LifeGameMain implements ActionListener, RefreshListener {
         lifeButton.setText(string);
         lifeButton.setForeground(color);
     }
+    
+    
 }
